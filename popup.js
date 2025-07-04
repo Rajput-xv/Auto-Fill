@@ -165,13 +165,13 @@ function updateFillButton(text, disabled) {
 function getDisplayNameForPopup(normalizedFieldName) {
   // Convert normalized field names back to user-friendly display names
   const displayNames = {
-    'email': 'Email Address',
     'phone': 'Phone Number',
+    'email': 'Email Address',
     'full_name': 'Full Name',
     'first_name': 'First Name',
     'last_name': 'Last Name',
+    'middle_name': 'Middle Name',
     'address': 'Address',
-    'address_line_1': 'Address Line 1',
     'address_line_2': 'Address Line 2',
     'city': 'City',
     'state': 'State/Province',
@@ -179,9 +179,20 @@ function getDisplayNameForPopup(normalizedFieldName) {
     'country': 'Country',
     'company': 'Company',
     'job_title': 'Job Title',
+    'department': 'Department',
     'date_of_birth': 'Date of Birth',
+    'age': 'Age',
+    'gender': 'Gender',
     'website': 'Website',
-    'message': 'Message'
+    'social_media': 'Social Media',
+    'message': 'Message',
+    'subject': 'Subject',
+    'password': 'Password',
+    'username': 'Username',
+    'school': 'School/University',
+    'degree': 'Degree',
+    'emergency_contact': 'Emergency Contact',
+    'emergency_phone': 'Emergency Phone'
   };
   
   // If we have a predefined display name, use it

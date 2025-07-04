@@ -7,6 +7,65 @@ let detectedForm = null;
 let formFields = [];
 let currentFormId = null; // Track which form we've shown auto-fill for
 
+// Smart field normalization - groups similar field types together
+const FIELD_NORMALIZATION_MAP = {
+  // Phone number variations
+  'phone': ['phone', 'phone number', 'mobile', 'mobile number', 'cell', 'cell phone', 'telephone', 'tel', 'contact number', 'contact', 'phone no', 'mobile no', 'cell no'],
+  
+  // Email variations
+  'email': ['email', 'email address', 'e-mail', 'e-mail address', 'electronic mail', 'mail', 'email id'],
+  
+  // Name variations
+  'full_name': ['full name', 'name', 'your name', 'complete name', 'full legal name'],
+  'first_name': ['first name', 'given name', 'forename', 'fname', 'first', 'name (first)'],
+  'last_name': ['last name', 'surname', 'family name', 'lname', 'last', 'name (last)'],
+  'middle_name': ['middle name', 'middle initial', 'middle', 'mi'],
+  
+  // Address variations
+  'address': ['address', 'street address', 'home address', 'mailing address', 'address line 1', 'street', 'addr'],
+  'address_line_2': ['address line 2', 'apartment', 'apt', 'suite', 'unit', 'address 2', 'street address 2'],
+  'city': ['city', 'town', 'locality'],
+  'state': ['state', 'province', 'region', 'state/province', 'state or province'],
+  'postal_code': ['postal code', 'zip code', 'zip', 'postcode', 'postal', 'pincode', 'pin'],
+  'country': ['country', 'nation', 'nationality'],
+  
+  // Company/Work variations
+  'company': ['company', 'organization', 'employer', 'company name', 'business', 'firm', 'corporation'],
+  'job_title': ['job title', 'position', 'title', 'role', 'occupation', 'designation'],
+  'department': ['department', 'division', 'team', 'dept'],
+  
+  // Personal info variations
+  'date_of_birth': ['date of birth', 'birth date', 'birthday', 'dob', 'birthdate'],
+  'age': ['age', 'your age'],
+  'gender': ['gender', 'sex'],
+  
+  // Contact variations
+  'website': ['website', 'web site', 'url', 'homepage', 'blog', 'personal website'],
+  'social_media': ['twitter', 'facebook', 'linkedin', 'instagram', 'social'],
+  
+  // Additional fields
+  'message': ['message', 'comment', 'comments', 'note', 'notes', 'description', 'details', 'additional info'],
+  'subject': ['subject', 'topic', 'regarding', 'title'],
+  'password': ['password', 'pass', 'pwd', 'passphrase'],
+  'username': ['username', 'user name', 'login', 'user id', 'userid'],
+  
+  // Education
+  'school': ['school', 'university', 'college', 'institution', 'alma mater'],
+  'degree': ['degree', 'qualification', 'education'],
+  
+  // Emergency contact
+  'emergency_contact': ['emergency contact', 'emergency contact name', 'next of kin'],
+  'emergency_phone': ['emergency phone', 'emergency contact phone', 'emergency number']
+};
+
+// Create reverse lookup map for faster field type detection
+const FIELD_TYPE_LOOKUP = {};
+Object.keys(FIELD_NORMALIZATION_MAP).forEach(normalizedType => {
+  FIELD_NORMALIZATION_MAP[normalizedType].forEach(variation => {
+    FIELD_TYPE_LOOKUP[variation.toLowerCase()] = normalizedType;
+  });
+});
+
 // Utility function to check if extension context is valid
 function isExtensionContextValid() {
   try {
@@ -126,49 +185,136 @@ function isFormField(element) {
   );
 }
 
+function normalizeFieldName(rawFieldName) {
+  if (!rawFieldName || typeof rawFieldName !== 'string') {
+    return null;
+  }
+  
+  // Clean and normalize the field name
+  const cleaned = rawFieldName.toLowerCase()
+    .trim()
+    .replace(/[^\w\s]/g, ' ')  // Replace special chars with spaces
+    .replace(/\s+/g, ' ')      // Normalize whitespace
+    .trim();
+  
+  // Direct lookup in our normalization map
+  if (FIELD_TYPE_LOOKUP[cleaned]) {
+    return FIELD_TYPE_LOOKUP[cleaned];
+  }
+  
+  // Try partial matching for compound field names
+  const words = cleaned.split(' ');
+  
+  // Check if any combination of words matches our patterns
+  for (let i = 0; i < words.length; i++) {
+    for (let j = i + 1; j <= words.length; j++) {
+      const phrase = words.slice(i, j).join(' ');
+      if (FIELD_TYPE_LOOKUP[phrase]) {
+        return FIELD_TYPE_LOOKUP[phrase];
+      }
+    }
+  }
+  
+  // Check individual words for key terms
+  for (const word of words) {
+    if (FIELD_TYPE_LOOKUP[word]) {
+      return FIELD_TYPE_LOOKUP[word];
+    }
+  }
+  
+  // Special pattern matching for common variations
+  if (cleaned.includes('phone') || cleaned.includes('mobile') || cleaned.includes('tel')) {
+    return 'phone';
+  }
+  if (cleaned.includes('email') || cleaned.includes('mail')) {
+    return 'email';
+  }
+  if (cleaned.includes('address') || cleaned.includes('street')) {
+    return 'address';
+  }
+  if (cleaned.includes('name') && !cleaned.includes('user') && !cleaned.includes('company')) {
+    if (cleaned.includes('first') || cleaned.includes('given')) return 'first_name';
+    if (cleaned.includes('last') || cleaned.includes('family') || cleaned.includes('surname')) return 'last_name';
+    if (cleaned.includes('middle')) return 'middle_name';
+    return 'full_name';
+  }
+  if (cleaned.includes('city') || cleaned.includes('town')) {
+    return 'city';
+  }
+  if (cleaned.includes('state') || cleaned.includes('province')) {
+    return 'state';
+  }
+  if (cleaned.includes('zip') || cleaned.includes('postal') || cleaned.includes('pin')) {
+    return 'postal_code';
+  }
+  if (cleaned.includes('country')) {
+    return 'country';
+  }
+  if (cleaned.includes('company') || cleaned.includes('organization')) {
+    return 'company';
+  }
+  
+  // If no normalization found, return the original cleaned name
+  return cleaned.replace(/\s+/g, '_');
+}
+
 function getFieldIdentifier(element) {
   // Universal field identification that works on ALL websites including Google Forms
   // Priority: Most specific to least specific
   
+  let rawIdentifier = null;
+  
   // 1. aria-label (modern accessibility standard - works everywhere)
   if (element.getAttribute('aria-label') && element.getAttribute('aria-label').trim()) {
-    return element.getAttribute('aria-label').trim();
+    rawIdentifier = element.getAttribute('aria-label').trim();
   }
   
   // 2. Associated label element (including aria-labelledby for Google Forms)
-  const label = findAssociatedLabel(element);
-  if (label && label.trim().length > 1) {
-    // Don't use generic labels like "Your answer"
-    const trimmedLabel = label.trim();
-    if (trimmedLabel !== 'Your answer' && !trimmedLabel.match(/^(Enter your|Type your|Fill in|Answer)/i)) {
-      return trimmedLabel;
+  if (!rawIdentifier) {
+    const label = findAssociatedLabel(element);
+    if (label && label.trim().length > 1) {
+      // Don't use generic labels like "Your answer"
+      const trimmedLabel = label.trim();
+      if (trimmedLabel !== 'Your answer' && !trimmedLabel.match(/^(Enter your|Type your|Fill in|Answer)/i)) {
+        rawIdentifier = trimmedLabel;
+      }
     }
   }
   
   // 3. placeholder text (very common on modern sites)
-  if (element.placeholder && element.placeholder.trim()) {
-    return element.placeholder.trim();
+  if (!rawIdentifier && element.placeholder && element.placeholder.trim()) {
+    rawIdentifier = element.placeholder.trim();
   }
   
   // 4. name attribute (backend form processing standard)
-  if (element.name && element.name.trim()) {
-    return element.name.trim();
+  if (!rawIdentifier && element.name && element.name.trim()) {
+    rawIdentifier = element.name.trim();
   }
   
   // 5. id attribute (unique identifier)
-  if (element.id && element.id.trim()) {
-    return element.id.trim();
+  if (!rawIdentifier && element.id && element.id.trim()) {
+    rawIdentifier = element.id.trim();
   }
   
   // 6. title attribute (tooltip text)
-  if (element.title && element.title.trim()) {
-    return element.title.trim();
+  if (!rawIdentifier && element.title && element.title.trim()) {
+    rawIdentifier = element.title.trim();
   }
   
   // 7. For Google Forms and similar: Try to find question text in nearby containers
-  const questionText = findGoogleFormsQuestionText(element);
-  if (questionText) {
-    return questionText;
+  if (!rawIdentifier) {
+    const questionText = findGoogleFormsQuestionText(element);
+    if (questionText) {
+      rawIdentifier = questionText;
+    }
+  }
+  
+  // If we found a raw identifier, try to normalize it
+  if (rawIdentifier) {
+    const normalizedName = normalizeFieldName(rawIdentifier);
+    if (normalizedName) {
+      return normalizedName;
+    }
   }
   
   // 8. Fallback: input type + position (ensures uniqueness)
@@ -177,10 +323,6 @@ function getFieldIdentifier(element) {
   const index = Array.from(inputs).indexOf(element);
   return `${element.type || 'text'}_field_${index}`;
 }
-
-// Removed complex normalizeFieldName function - using direct label matching now
-
-// Removed detectFieldTypeFromContext function - using simple field identification now
 
 function findAssociatedLabel(element) {
   // Universal label detection that works on ALL websites including Google Forms
@@ -500,24 +642,73 @@ function showSavedConfirmation() {
   }, 2000);
 }
 
+function getDisplayNameForNormalizedField(normalizedFieldName, originalLabel = null) {
+  // If we have the original label and it's not a generic one, use it
+  if (originalLabel && originalLabel.length > 1 && 
+      !originalLabel.match(/^(Your answer|Enter your|Type your|Fill in|Answer)/i)) {
+    return originalLabel;
+  }
+  
+  // Map normalized field names to user-friendly display names
+  const displayNames = {
+    'phone': 'Phone Number',
+    'email': 'Email Address',
+    'full_name': 'Full Name',
+    'first_name': 'First Name',
+    'last_name': 'Last Name',
+    'middle_name': 'Middle Name',
+    'address': 'Address',
+    'address_line_2': 'Address Line 2',
+    'city': 'City',
+    'state': 'State/Province',
+    'postal_code': 'Postal Code',
+    'country': 'Country',
+    'company': 'Company',
+    'job_title': 'Job Title',
+    'department': 'Department',
+    'date_of_birth': 'Date of Birth',
+    'age': 'Age',
+    'gender': 'Gender',
+    'website': 'Website',
+    'social_media': 'Social Media',
+    'message': 'Message',
+    'subject': 'Subject',
+    'password': 'Password',
+    'username': 'Username',
+    'school': 'School/University',
+    'degree': 'Degree',
+    'emergency_contact': 'Emergency Contact',
+    'emergency_phone': 'Emergency Phone'
+  };
+  
+  // Return the display name or fallback to converting the normalized name
+  return displayNames[normalizedFieldName] || 
+         normalizedFieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
 function saveFieldData(element, fieldName = null, value = null) {
-  fieldName = fieldName || getFieldIdentifier(element);
+  const normalizedFieldName = fieldName || getFieldIdentifier(element);
   value = value || element.value.trim();
   
   if (value.length < 2) return;
   
   // Check if extension context is still valid
   if (!isExtensionContextValid()) {
-    console.log('Extension context invalidated, cannot save data');
     return;
   }
   
+  // Get the original label for display purposes
+  const originalLabel = findAssociatedLabel(element) || 
+                       element.getAttribute('aria-label') || 
+                       element.placeholder;
+  
   const formData = {
-    fieldName: fieldName,
+    fieldName: normalizedFieldName,  // Use normalized name as the key
     value: value,
     domain: window.location.hostname,
     url: window.location.href,
-    label: findAssociatedLabel(element) || fieldName
+    label: originalLabel || getDisplayNameForNormalizedField(normalizedFieldName),
+    originalLabel: originalLabel  // Keep original for reference
   };
   
   chrome.runtime.sendMessage({
@@ -525,7 +716,6 @@ function saveFieldData(element, fieldName = null, value = null) {
     data: formData
   }, (response) => {
     if (chrome.runtime.lastError) {
-      console.log('Extension context error while saving:', chrome.runtime.lastError.message);
       return;
     }
   });
@@ -955,14 +1145,13 @@ async function triggerManualAutoFill() {
 }
 
 function getDisplayName(fieldIdentifier, element) {
-  // If we have the actual label, use it
-  const label = findAssociatedLabel(element);
-  if (label && label.trim().length > 1) {
-    return label.trim();
-  }
+  // Get the original label for display
+  const originalLabel = findAssociatedLabel(element) || 
+                       element.getAttribute('aria-label') || 
+                       element.placeholder;
   
-  // Otherwise use the field identifier (cleaned up)
-  return fieldIdentifier.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  // Use the new display name function with the original label as fallback
+  return getDisplayNameForNormalizedField(fieldIdentifier, originalLabel);
 }
 
 // Listen for extension toggle

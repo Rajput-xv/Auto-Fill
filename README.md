@@ -6,6 +6,7 @@
 
 - **Works everywhere**: Google Forms, Amazon, LinkedIn, job sites, surveys - any website
 - **Smart field matching**: Uses labels, aria-attributes, and context to fill the right data
+- **Intelligent grouping**: Recognizes "Phone", "Mobile", "Cell Phone" as the same field type
 - **Your choice**: You decide what to save, extension only suggests
 - **100% private**: All data stays on your computer, never shared
 
@@ -31,12 +32,18 @@
 
 - ✅ **Universal compatibility** - Works on all websites
 - ✅ **Perfect accuracy** - Never fills wrong data in wrong fields
+- ✅ **Smart field grouping** - "Phone", "Mobile", "Cell" all share the same data
 - ✅ **Google Forms support** - Full compatibility with modern forms
 - ✅ **Privacy first** - No tracking, no external servers
 - ✅ **One-click filling** - Complete forms instantly
 - ✅ **Smart suggestions** - Individual field auto-complete
 
 ## 🛠️ Technical Details
+
+**Smart Field Normalization:**
+- Groups similar fields: "Phone" = "Mobile" = "Cell Phone"
+- 50+ field variations recognized automatically
+- Cross-website data sharing for same field types
 
 **Field Detection Priority:**
 1. aria-label / aria-labelledby
