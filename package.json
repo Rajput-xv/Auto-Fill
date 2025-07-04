@@ -1,0 +1,30 @@
+{
+  "name": "auto-fill-assistant",
+  "version": "1.0.0",
+  "description": "Universal Chrome extension that automatically stores and fills form data across any website",
+  "main": "background.js",
+  "scripts": {
+    "build": "echo 'No build process needed for this Chrome extension'",
+    "test": "echo 'Extension ready for manual testing'",
+    "package": "zip -r auto-fill-assistant-v1.0.zip . -x '*.git*' 'node_modules/*' '*.DS_Store'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "auto-fill",
+    "form-automation",
+    "productivity",
+    "google-forms",
+    "universal-forms",
+    "accessibility"
+  ],
+  "author": "Yash Verma",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Rajput-xv/Auto-Fill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Rajput-xv/Auto-Fill/issues"
+  },
+  "homepage": "https://github.com/Rajput-xv/Auto-Fill#readme"
+}
