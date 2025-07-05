@@ -10,52 +10,76 @@ let currentFormId = null; // Track which form we've shown auto-fill for
 // Smart field normalization - groups similar field types together
 const FIELD_NORMALIZATION_MAP = {
   // Phone number variations
-  'phone': ['phone', 'phone number', 'mobile', 'mobile number', 'cell', 'cell phone', 'telephone', 'tel', 'contact number', 'contact', 'phone no', 'mobile no', 'cell no'],
+  'phone': ['phone', 'phone number', 'mobile', 'mobile number', 'cell', 'cell phone', 'telephone', 'tel', 'contact number', 'contact', 'phone no', 'mobile no', 'cell no', 'work phone', 'home phone'],
   
   // Email variations
-  'email': ['email', 'email address', 'e-mail', 'e-mail address', 'electronic mail', 'mail', 'email id'],
+  'email': ['email', 'email address', 'e-mail', 'e-mail address', 'electronic mail', 'mail', 'email id', 'work email', 'personal email'],
   
   // Name variations
-  'full_name': ['full name', 'name', 'your name', 'complete name', 'full legal name'],
-  'first_name': ['first name', 'given name', 'forename', 'fname', 'first', 'name (first)'],
-  'last_name': ['last name', 'surname', 'family name', 'lname', 'last', 'name (last)'],
-  'middle_name': ['middle name', 'middle initial', 'middle', 'mi'],
+  'full_name': ['full name', 'name', 'your name', 'complete name', 'full legal name', 'legal name', 'display name'],
+  'first_name': ['first name', 'given name', 'forename', 'fname', 'first', 'name (first)', 'given', 'firstname'],
+  'last_name': ['last name', 'surname', 'family name', 'lname', 'last', 'name (last)', 'lastname', 'familyname'],
+  'middle_name': ['middle name', 'middle initial', 'middle', 'mi', 'middlename'],
   
   // Address variations
-  'address': ['address', 'street address', 'home address', 'mailing address', 'address line 1', 'street', 'addr'],
-  'address_line_2': ['address line 2', 'apartment', 'apt', 'suite', 'unit', 'address 2', 'street address 2'],
-  'city': ['city', 'town', 'locality'],
-  'state': ['state', 'province', 'region', 'state/province', 'state or province'],
-  'postal_code': ['postal code', 'zip code', 'zip', 'postcode', 'postal', 'pincode', 'pin'],
-  'country': ['country', 'nation', 'nationality'],
+  'address': ['address', 'street address', 'home address', 'mailing address', 'address line 1', 'street', 'addr', 'address1', 'street1'],
+  'address_line_2': ['address line 2', 'apartment', 'apt', 'suite', 'unit', 'address 2', 'street address 2', 'address2', 'apt/suite'],
+  'city': ['city', 'town', 'locality', 'municipality'],
+  'state': ['state', 'province', 'region', 'state/province', 'state or province', 'st'],
+  'postal_code': ['postal code', 'zip code', 'zip', 'postcode', 'postal', 'pincode', 'pin', 'zipcode'],
+  'country': ['country', 'nation', 'nationality', 'country/region'],
   
   // Company/Work variations
-  'company': ['company', 'organization', 'employer', 'company name', 'business', 'firm', 'corporation'],
-  'job_title': ['job title', 'position', 'title', 'role', 'occupation', 'designation'],
-  'department': ['department', 'division', 'team', 'dept'],
+  'company': ['company', 'organization', 'employer', 'company name', 'business', 'firm', 'corporation', 'current employer', 'workplace'],
+  'job_title': ['job title', 'position', 'title', 'role', 'occupation', 'designation', 'current position', 'position title', 'job role'],
+  'department': ['department', 'division', 'team', 'dept', 'group'],
+  'work_experience': ['experience', 'years of experience', 'work experience', 'professional experience', 'years experience'],
+  'salary': ['salary', 'expected salary', 'current salary', 'compensation', 'pay', 'wage', 'income'],
   
   // Personal info variations
-  'date_of_birth': ['date of birth', 'birth date', 'birthday', 'dob', 'birthdate'],
+  'date_of_birth': ['date of birth', 'birth date', 'birthday', 'dob', 'birthdate', 'born'],
   'age': ['age', 'your age'],
   'gender': ['gender', 'sex'],
   
   // Contact variations
-  'website': ['website', 'web site', 'url', 'homepage', 'blog', 'personal website'],
-  'social_media': ['twitter', 'facebook', 'linkedin', 'instagram', 'social'],
+  'website': ['website', 'web site', 'url', 'homepage', 'blog', 'personal website', 'portfolio', 'portfolio url'],
+  'linkedin': ['linkedin', 'linkedin url', 'linkedin profile', 'linkedin link'],
+  'social_media': ['twitter', 'facebook', 'instagram', 'social', 'social media'],
   
   // Additional fields
-  'message': ['message', 'comment', 'comments', 'note', 'notes', 'description', 'details', 'additional info'],
-  'subject': ['subject', 'topic', 'regarding', 'title'],
+  'message': ['message', 'comment', 'comments', 'note', 'notes', 'description', 'details', 'additional info', 'cover letter', 'about', 'bio'],
+  'subject': ['subject', 'topic', 'regarding', 'title', 'reason'],
   'password': ['password', 'pass', 'pwd', 'passphrase'],
   'username': ['username', 'user name', 'login', 'user id', 'userid'],
   
   // Education
-  'school': ['school', 'university', 'college', 'institution', 'alma mater'],
-  'degree': ['degree', 'qualification', 'education'],
+  'school': ['school', 'university', 'college', 'institution', 'alma mater', 'education', 'university/college'],
+  'degree': ['degree', 'qualification', 'education level', 'highest education', 'major', 'field of study'],
+  'graduation_year': ['graduation year', 'year graduated', 'completion year', 'grad year'],
+  'gpa': ['gpa', 'grade point average', 'cgpa', 'grades'],
   
   // Emergency contact
-  'emergency_contact': ['emergency contact', 'emergency contact name', 'next of kin'],
-  'emergency_phone': ['emergency phone', 'emergency contact phone', 'emergency number']
+  'emergency_contact': ['emergency contact', 'emergency contact name', 'next of kin', 'reference'],
+  'emergency_phone': ['emergency phone', 'emergency contact phone', 'emergency number', 'reference phone'],
+  
+  // Job application specific
+  'availability': ['availability', 'start date', 'available from', 'when can you start', 'notice period'],
+  'visa_status': ['visa status', 'work authorization', 'authorization to work', 'eligible to work', 'work permit'],
+  'relocation': ['willing to relocate', 'relocation', 'open to relocation', 'relocate'],
+  'reference_name': ['reference name', 'reference', 'referee name', 'professional reference'],
+  'reference_phone': ['reference phone', 'reference contact', 'referee phone'],
+  'reference_email': ['reference email', 'referee email'],
+  'cover_letter': ['cover letter', 'why interested', 'motivation', 'why you', 'personal statement'],
+  
+  // Skills and certifications
+  'skills': ['skills', 'technical skills', 'key skills', 'relevant skills', 'core competencies'],
+  'certifications': ['certifications', 'certificates', 'licenses', 'professional certifications'],
+  'languages': ['languages', 'language skills', 'spoken languages'],
+  
+  // Additional personal details
+  'portfolio_url': ['portfolio', 'portfolio url', 'work samples', 'projects', 'github'],
+  'how_did_you_hear': ['how did you hear', 'heard about', 'source', 'referral source'],
+  'preferred_contact': ['preferred contact', 'best time to contact', 'contact preference']
 };
 
 // Create reverse lookup map for faster field type detection
@@ -85,6 +109,9 @@ function init() {
     return;
   }
   
+  // Inject CSS styles for the extension
+  injectStyles();
+  
   chrome.storage.local.get(['extensionEnabled'], (result) => {
     if (chrome.runtime.lastError) {
       console.log('Extension context error during initialization:', chrome.runtime.lastError.message);
@@ -98,6 +125,76 @@ function init() {
   });
 }
 
+function injectStyles() {
+  // Only inject styles once
+  if (document.getElementById('autofill-extension-styles')) return;
+  
+  const style = document.createElement('style');
+  style.id = 'autofill-extension-styles';
+  style.textContent = `
+    .autofill-suggestions {
+      position: fixed !important;
+      background: white !important;
+      border: 1px solid #ccc !important;
+      border-radius: 4px !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+      z-index: 999999 !important;
+      font-family: Arial, sans-serif !important;
+      font-size: 14px !important;
+      max-height: 200px !important;
+      overflow-y: auto !important;
+    }
+    
+    .autofill-popup {
+      position: fixed !important;
+      background: #2196F3 !important;
+      color: white !important;
+      border-radius: 12px !important;
+      font-family: Arial, sans-serif !important;
+      z-index: 999998 !important;
+      box-shadow: 0 6px 25px rgba(0,0,0,0.3) !important;
+    }
+    
+    .autofill-save-option {
+      position: fixed !important;
+      background: #4CAF50 !important;
+      color: white !important;
+      border-radius: 8px !important;
+      font-family: Arial, sans-serif !important;
+      z-index: 999997 !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+    }
+    
+    @keyframes slideInRight {
+      from { 
+        opacity: 0; 
+        transform: translateX(20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateX(0); 
+      }
+    }
+    
+    @keyframes slideOutRight {
+      from { 
+        opacity: 1; 
+        transform: translateX(0); 
+      }
+      to { 
+        opacity: 0; 
+        transform: translateX(20px); 
+      }
+    }
+    
+    .autofill-popup.hiding {
+      animation: slideOutRight 0.3s ease-in forwards !important;
+    }
+  `;
+  
+  document.head.appendChild(style);
+}
+
 function attachEventListeners() {
   // Listen for input events on all text inputs
   document.addEventListener('input', handleInputEvent, true);
@@ -105,11 +202,32 @@ function attachEventListeners() {
   document.addEventListener('blur', handleBlurEvent, true);
   document.addEventListener('click', handleClickEvent, true);
   
-  // Also listen for dynamic content changes to reset form tracking
-  const observer = new MutationObserver(() => {
-    // Reset form tracking when DOM changes significantly
-    // This ensures auto-fill popup can appear for dynamically added forms
-    if (currentFormId && !document.querySelector('.autofill-popup')) {
+  // Enhanced mutation observer for dynamic websites (SPAs, AJAX forms)
+  const observer = new MutationObserver((mutations) => {
+    let shouldResetFormTracking = false;
+    
+    mutations.forEach((mutation) => {
+      // Check if new form elements were added
+      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+        mutation.addedNodes.forEach(node => {
+          if (node.nodeType === 1) { // Element node
+            // Check if the added node contains form fields
+            const hasFormFields = node.querySelectorAll && 
+              node.querySelectorAll('input, textarea, select, [contenteditable], [role="textbox"]').length > 0;
+            
+            if (hasFormFields || 
+                node.tagName === 'FORM' || 
+                node.classList?.contains('form') ||
+                node.classList?.contains('form-container')) {
+              shouldResetFormTracking = true;
+            }
+          }
+        });
+      }
+    });
+    
+    // Reset form tracking when new forms are detected
+    if (shouldResetFormTracking && currentFormId && !document.querySelector('.autofill-popup')) {
       currentFormId = null;
     }
   });
@@ -118,6 +236,20 @@ function attachEventListeners() {
     childList: true,
     subtree: true
   });
+  
+  // Also handle page navigation for SPAs
+  let lastUrl = location.href;
+  new MutationObserver(() => {
+    const url = location.href;
+    if (url !== lastUrl) {
+      lastUrl = url;
+      // Reset form tracking on navigation
+      currentFormId = null;
+      hideAutoFillPopup();
+      hideSuggestions();
+      hideSaveOption();
+    }
+  }).observe(document, { subtree: true, childList: true });
 }
 
 function handleInputEvent(event) {
@@ -140,11 +272,14 @@ function handleFocusEvent(event) {
   if (isFormField(element)) {
     currentField = element;
     
-    // Detect if this is part of a form and check for auto-fill opportunity
-    detectFormAndShowAutoFill(element);
-    
-    // Show individual field suggestions
-    showSuggestions(element);
+    // Add a small delay to handle dynamically loaded forms
+    setTimeout(() => {
+      // Detect if this is part of a form and check for auto-fill opportunity
+      detectFormAndShowAutoFill(element);
+      
+      // Show individual field suggestions
+      showSuggestions(element);
+    }, 100); // 100ms delay to allow form to fully load
   }
 }
 
@@ -178,11 +313,60 @@ function handleClickEvent(event) {
 }
 
 function isFormField(element) {
-  return (
-    (element.tagName === 'INPUT' && 
-     ['text', 'email', 'tel', 'url', 'search'].includes(element.type)) ||
-    element.tagName === 'TEXTAREA'
-  );
+  // Universal form field detection - works on ALL websites
+  if (!element || !element.tagName) return false;
+  
+  const tagName = element.tagName.toLowerCase();
+  
+  // Standard text inputs and textareas
+  if (tagName === 'textarea') return true;
+  
+  if (tagName === 'input') {
+    const inputType = (element.type || 'text').toLowerCase();
+    
+    // Include all text-based input types that can be auto-filled
+    const allowedTypes = [
+      'text', 'email', 'tel', 'url', 'search', 'password', 
+      'number', 'date', 'datetime-local', 'month', 'week', 
+      'time', 'color', 'range'
+    ];
+    
+    // Also accept inputs without explicit type (defaults to text)
+    if (!element.type || allowedTypes.includes(inputType)) {
+      return true;
+    }
+  }
+  
+  // Custom form elements (many job sites use these)
+  if (tagName === 'select') return true;
+  
+  // Content-editable elements (some modern forms use these)
+  if (element.contentEditable === 'true' || element.contentEditable === '') {
+    return true;
+  }
+  
+  // Elements with role="textbox" (ARIA accessibility)
+  if (element.getAttribute('role') === 'textbox') return true;
+  
+  // Check for common data attributes used by form libraries
+  if (element.hasAttribute('data-input') || 
+      element.hasAttribute('data-field') ||
+      element.hasAttribute('data-form-field')) {
+    return true;
+  }
+  
+  // Check for common CSS classes used by form frameworks
+  const className = element.className || '';
+  const formFieldClasses = [
+    'form-control', 'form-input', 'input', 'textbox', 
+    'text-field', 'field-input', 'form-field'
+  ];
+  
+  if (formFieldClasses.some(cls => className.includes(cls))) {
+    return true;
+  }
+  
+  return false;
 }
 
 function normalizeFieldName(rawFieldName) {
@@ -666,10 +850,13 @@ function getDisplayNameForNormalizedField(normalizedFieldName, originalLabel = n
     'company': 'Company',
     'job_title': 'Job Title',
     'department': 'Department',
+    'work_experience': 'Work Experience',
+    'salary': 'Salary',
     'date_of_birth': 'Date of Birth',
     'age': 'Age',
     'gender': 'Gender',
     'website': 'Website',
+    'linkedin': 'LinkedIn',
     'social_media': 'Social Media',
     'message': 'Message',
     'subject': 'Subject',
@@ -677,8 +864,23 @@ function getDisplayNameForNormalizedField(normalizedFieldName, originalLabel = n
     'username': 'Username',
     'school': 'School/University',
     'degree': 'Degree',
+    'graduation_year': 'Graduation Year',
+    'gpa': 'GPA',
     'emergency_contact': 'Emergency Contact',
-    'emergency_phone': 'Emergency Phone'
+    'emergency_phone': 'Emergency Phone',
+    'availability': 'Availability',
+    'visa_status': 'Visa Status',
+    'relocation': 'Relocation',
+    'reference_name': 'Reference Name',
+    'reference_phone': 'Reference Phone',
+    'reference_email': 'Reference Email',
+    'cover_letter': 'Cover Letter',
+    'skills': 'Skills',
+    'certifications': 'Certifications',
+    'languages': 'Languages',
+    'portfolio_url': 'Portfolio URL',
+    'how_did_you_hear': 'How Did You Hear',
+    'preferred_contact': 'Preferred Contact'
   };
   
   // Return the display name or fallback to converting the normalized name
@@ -826,7 +1028,32 @@ async function detectFormAndShowAutoFill(focusedElement) {
     // Don't show if auto-fill popup is already visible for this specific form
     if (autoFillPopup && currentFormId === formId) return;
     
-    const allFields = form.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="search"], textarea');
+    // Enhanced field selection - works on ALL websites
+    const allFields = form.querySelectorAll(`
+      input[type="text"], 
+      input[type="email"], 
+      input[type="tel"], 
+      input[type="url"], 
+      input[type="search"], 
+      input[type="password"],
+      input[type="number"],
+      input[type="date"],
+      input:not([type]),
+      textarea,
+      select,
+      [contenteditable="true"],
+      [role="textbox"],
+      [data-input],
+      [data-field],
+      [data-form-field],
+      .form-control,
+      .form-input,
+      .input,
+      .textbox,
+      .text-field,
+      .field-input,
+      .form-field
+    `);
     
     if (allFields.length < 2) return; // Need at least 2 fields
     
@@ -843,6 +1070,7 @@ async function detectFormAndShowAutoFill(focusedElement) {
     const matchingFields = [];
     allFields.forEach(field => {
       if (field === focusedElement) return; // Skip the currently focused field
+      if (!isFormField(field)) return; // Double-check it's a valid form field
       
       const fieldId = getFieldIdentifier(field);
       
@@ -1022,13 +1250,74 @@ function fillAllMatchingFields(matchingFields) {
     
     const bestSuggestion = suggestions[0]; // Use the most frequent/recent suggestion
     
-    // Fill the field
-    element.value = bestSuggestion.value;
-    
-    // Trigger events to ensure the website recognizes the change
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-    element.dispatchEvent(new Event('change', { bubbles: true }));
-    element.dispatchEvent(new Event('blur', { bubbles: true }));
+    // Handle different types of form elements
+    if (element.tagName.toLowerCase() === 'select') {
+      // Handle select dropdowns
+      const options = Array.from(element.options);
+      const matchingOption = options.find(option => 
+        option.text.toLowerCase() === bestSuggestion.value.toLowerCase() ||
+        option.value.toLowerCase() === bestSuggestion.value.toLowerCase()
+      );
+      
+      if (matchingOption) {
+        element.selectedIndex = matchingOption.index;
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    } else if (element.contentEditable === 'true' || element.contentEditable === '') {
+      // Handle content-editable elements
+      element.textContent = bestSuggestion.value;
+      element.innerHTML = bestSuggestion.value;
+      
+      // Trigger input and change events for content-editable
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+      element.dispatchEvent(new Event('change', { bubbles: true }));
+      element.dispatchEvent(new Event('blur', { bubbles: true }));
+    } else {
+      // Handle regular input fields and textareas
+      element.value = bestSuggestion.value;
+      
+      // Trigger comprehensive events to ensure all frameworks detect the change
+      const events = [
+        'input',
+        'change', 
+        'blur',
+        'keyup',
+        'keydown'
+      ];
+      
+      events.forEach(eventType => {
+        element.dispatchEvent(new Event(eventType, { bubbles: true }));
+      });
+      
+      // Also trigger React-style events for React-based forms
+      if (window.React) {
+        const reactEvents = [
+          'onInput',
+          'onChange',
+          'onBlur'
+        ];
+        
+        reactEvents.forEach(eventName => {
+          if (element[eventName]) {
+            element[eventName]({ target: element, currentTarget: element });
+          }
+        });
+      }
+      
+      // Trigger Vue.js events for Vue-based forms
+      if (window.Vue) {
+        element.dispatchEvent(new CustomEvent('vue:updated', { 
+          bubbles: true, 
+          detail: { value: bestSuggestion.value }
+        }));
+      }
+      
+      // Focus and blur to ensure validation triggers
+      element.focus();
+      setTimeout(() => {
+        element.blur();
+      }, 50);
+    }
   });
 }
 
@@ -1086,8 +1375,32 @@ async function triggerManualAutoFill() {
       return {success: false, message: 'Extension context invalidated'};
     }
     
-    // Find all form fields on the page
-    const allFields = document.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="search"], textarea');
+    // Enhanced field selection - works on ALL websites
+    const allFields = document.querySelectorAll(`
+      input[type="text"], 
+      input[type="email"], 
+      input[type="tel"], 
+      input[type="url"], 
+      input[type="search"], 
+      input[type="password"],
+      input[type="number"],
+      input[type="date"],
+      input:not([type]),
+      textarea,
+      select,
+      [contenteditable="true"],
+      [role="textbox"],
+      [data-input],
+      [data-field],
+      [data-form-field],
+      .form-control,
+      .form-input,
+      .input,
+      .textbox,
+      .text-field,
+      .field-input,
+      .form-field
+    `);
     
     if (allFields.length === 0) {
       return {success: false, message: 'No form fields found'};
@@ -1105,8 +1418,11 @@ async function triggerManualAutoFill() {
     // Find matching fields using direct label matching
     const matchingFields = [];
     allFields.forEach(field => {
-      // Skip fields that are already filled
-      if (field.value && field.value.trim().length > 0) return;
+      // Double-check it's a valid form field
+      if (!isFormField(field)) return;
+      
+      // Skip fields that are already filled (unless it's a very short value)
+      if (field.value && field.value.trim().length > 2) return;
       
       const fieldId = getFieldIdentifier(field);
       

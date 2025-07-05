@@ -180,10 +180,13 @@ function getDisplayNameForPopup(normalizedFieldName) {
     'company': 'Company',
     'job_title': 'Job Title',
     'department': 'Department',
+    'work_experience': 'Work Experience',
+    'salary': 'Salary',
     'date_of_birth': 'Date of Birth',
     'age': 'Age',
     'gender': 'Gender',
     'website': 'Website',
+    'linkedin': 'LinkedIn',
     'social_media': 'Social Media',
     'message': 'Message',
     'subject': 'Subject',
@@ -191,8 +194,23 @@ function getDisplayNameForPopup(normalizedFieldName) {
     'username': 'Username',
     'school': 'School/University',
     'degree': 'Degree',
+    'graduation_year': 'Graduation Year',
+    'gpa': 'GPA',
     'emergency_contact': 'Emergency Contact',
-    'emergency_phone': 'Emergency Phone'
+    'emergency_phone': 'Emergency Phone',
+    'availability': 'Availability',
+    'visa_status': 'Visa Status',
+    'relocation': 'Relocation',
+    'reference_name': 'Reference Name',
+    'reference_phone': 'Reference Phone',
+    'reference_email': 'Reference Email',
+    'cover_letter': 'Cover Letter',
+    'skills': 'Skills',
+    'certifications': 'Certifications',
+    'languages': 'Languages',
+    'portfolio_url': 'Portfolio URL',
+    'how_did_you_hear': 'How Did You Hear',
+    'preferred_contact': 'Preferred Contact'
   };
   
   // If we have a predefined display name, use it
